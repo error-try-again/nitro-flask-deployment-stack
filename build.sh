@@ -106,13 +106,52 @@ services:
 EOF
 }
 
+# Function to append Flask and Nitro API services to existing docker-compose.yml
+append_to_docker_compose() {
+    # Define new services configuration
+    local new_services
+    new_services=$(
+                   cat << EOF
 
+  flask-app:
+    build:
+      context: ${FLASK_APP_CONTEXT}
+    ports:
+      - "${FLASK_APP_PORT}:${FLASK_APP_PORT}"
+    environment:
+      - FLASK_ENV=production
+    restart: always
+    networks:
+      - qrgen
 
+  nitro-api:
+    build:
+      context: ${NITRO_API_CONTEXT}
+    ports:
+      - "${NITRO_API_PORT}:${NITRO_API_PORT}"
+    environment:
+      - FLASK_API_URL=http://flask-app:${FLASK_APP_PORT}
+    restart: always
+    depends_on:
+      - flask-app
+    networks:
+      - qrgen
+EOF
+  )
+    # Find the last occurrence of 'services:' and append the new services
+    sed -i "/services:/,\$!b;n;/^\$/i ${new_services}" docker-compose.yml
+}
 
 #######################################
 # Main function
 #######################################
 main() {
+  # Check for --amend flag
+  AMEND=false
+  if [[ "$1" == "--amend" ]]; then
+    AMEND=true
+  fi
+
   # Read configuration
   local key
   local value
@@ -129,7 +168,14 @@ main() {
 
   create_nitro_dockerfile
 
-  create_docker_compose
+    # Amend or create new docker-compose.yml
+  if [[ "${AMEND}" == true ]]; then
+    echo "Appending to existing docker-compose.yml"
+    append_to_docker_compose
+  else
+    echo "Creating new docker-compose.yml"
+    create_docker_compose
+  fi
 
   echo "Dockerfiles and docker-compose.yml have been generated."
 

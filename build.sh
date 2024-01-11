@@ -97,17 +97,11 @@ services:
       context: ${NITRO_API_CONTEXT}
     ports:
       - "${NITRO_API_PORT}:${NITRO_API_PORT}"
-    volumes:
-      - nginx-shared-volume:/usr/src/app/public  # Shared volume for ai-plugins.json
     environment:
       - FLASK_API_URL=http://flask-app:${FLASK_APP_PORT}
     restart: always
     depends_on:
       - flask-app
-
-volumes:
-  nginx-shared-volume:
-    external: true
 
 EOF
 }

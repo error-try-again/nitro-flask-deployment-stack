@@ -112,7 +112,8 @@ append_to_docker_compose() {
     cp docker-compose.yml docker-compose.yml.backup
 
     # Define new services configuration
-    local new_services="  flask-app:
+    local new_services="
+  flask-app:
     build:
       context: ${FLASK_APP_CONTEXT}
     ports:
@@ -121,7 +122,9 @@ append_to_docker_compose() {
       - FLASK_ENV=production
     restart: always
     networks:
-      - qrgen
+      - qrgen"
+
+    local nitro_service="
   nitro-api:
     build:
       context: ${NITRO_API_CONTEXT}
@@ -135,20 +138,32 @@ append_to_docker_compose() {
     networks:
       - qrgen"
 
+  if [[ "${VOLUME}" == true ]]; then
+        new_services+="
+    volumes:
+      - nginx-shared-volume:/usr/src/app/public"
+  fi
+
+    new_services+="${nitro_service}"
+
     # Use awk to insert new services immediately after 'services:' line
     awk -v new="${new_services}" '/^services:/{print;print new;next}1' docker-compose.yml.backup > docker-compose.yml
 }
-
 
 #######################################
 # Main function
 #######################################
 main() {
-  # Check for --amend flag
+  # Check for flags
   AMEND=false
-  if [[ "$1" == "--amend" ]]; then
-    AMEND=true
-  fi
+  VOLUME=false
+  for arg in "$@"; do
+    if [[ "${arg}" == "--amend" ]]; then
+      AMEND=true
+    elif [[ "${arg}" == "--volume" ]]; then
+      VOLUME=true
+    fi
+  done
 
   # Read configuration
   local key

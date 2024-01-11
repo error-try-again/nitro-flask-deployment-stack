@@ -1,0 +1,8 @@
+FLASK_APP_CONTEXT=./flask-app
+FLASK_APP_DOCKERFILE=./flask-app/Dockerfile
+FLASK_APP_REPO_URL=https://github.com/error-try-again/cvss-severity-matrix.git
+FLASK_APP_PORT=5000
+NITRO_API_CONTEXT=./nitro-api
+NITRO_API_DOCKERFILE=./nitro-api/Dockerfile
+NITRO_API_REPO_URL=https://github.com/error-try-again/nitro-gpt-severity-matrix
+NITRO_API_PORT=3000

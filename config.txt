@@ -6,3 +6,4 @@ NITRO_API_CONTEXT=./nitro-api
 NITRO_API_DOCKERFILE=./nitro-api/Dockerfile
 NITRO_API_REPO_URL=https://github.com/error-try-again/nitro-gpt-severity-matrix
 NITRO_API_PORT=3000
+FRONTEND_APP_DOCKERFILE=./frontend/Dockerfile

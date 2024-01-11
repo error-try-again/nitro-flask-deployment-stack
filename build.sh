@@ -77,6 +77,28 @@ CMD ["npm", "run", "preview"]
 EOF
 }
 
+# Modify the Frontend App Dockerfile
+modify_nginx_dockerfile() {
+    if [[ "${MOD_NGINX}" == true ]]; then
+        echo "Modifying Frontend App Dockerfile: ${FRONTEND_APP_DOCKERFILE}"
+
+        # Read the Dockerfile into a variable
+        DOCKERFILE_CONTENTS=$(<"${FRONTEND_APP_DOCKERFILE}")
+
+        # The command to be inserted
+        COPY_CMD="COPY ../nitro-api/public/.well-known/ai-plugins.json /usr/share/nginx/html/.well-known/"
+
+        # Insert the COPY command after the specified line
+        MODIFIED_CONTENTS=$(echo "${DOCKERFILE_CONTENTS}" | sed "/RUN mkdir -p \/usr\/share\/nginx\/html\/\.well-known\/acme-challenge &&     chmod -R 777 \/usr\/share\/nginx\/html\/\.well-known/a ${COPY_CMD}")
+
+        # Write the modified content back into the Dockerfile
+        echo "${MODIFIED_CONTENTS}" > "${FRONTEND_APP_DOCKERFILE}"
+
+    else
+        echo "Frontend App Dockerfile not found at: ${FRONTEND_APP_DOCKERFILE}"
+    fi
+}
+
 # Create docker-compose.yml
 create_docker_compose() {
     cat > docker-compose.yml << EOF
@@ -139,9 +161,9 @@ append_to_docker_compose() {
       - qrgen"
 
   if [[ "${VOLUME}" == true ]]; then
-        new_services+="
+        nitro_service+="
     volumes:
-      - nginx-shared-volume:/usr/share/nginx/html"
+      - nginx-shared-volume:/usr/src/app/public/.well-known/"
   fi
 
     new_services+="${nitro_service}"
@@ -157,11 +179,18 @@ main() {
   # Check for flags
   AMEND=false
   VOLUME=false
+  MOD_NGINX=false
   for arg in "$@"; do
     if [[ "${arg}" == "--amend" ]]; then
       AMEND=true
-    elif [[ "${arg}" == "--volume" ]]; then
+    fi
+
+    if [[ "${arg}" == "--volume" ]]; then
       VOLUME=true
+    fi
+
+    if [[ "${arg}" == "--mod-nginx" ]]; then
+      MOD_NGINX=true
     fi
   done
 
@@ -190,7 +219,9 @@ main() {
     create_docker_compose
   fi
 
-  echo "Dockerfiles and docker-compose.yml have been generated."
+  if [[ "${MOD_NGINX}" == true ]]; then
+    modify_nginx_dockerfile
+  fi
 
 }
 

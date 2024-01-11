@@ -106,42 +106,37 @@ services:
 EOF
 }
 
-# Append Flask and Nitro API services to existing docker-compose.yml
+# Function to append Flask and Nitro API services to existing docker-compose.yml
 append_to_docker_compose() {
     # Backup original file
     cp docker-compose.yml docker-compose.yml.backup
 
     # Define new services configuration
-    local new_services
-    new_services=$(cat <<EOF
-
-  flask-app:
+    local new_services="  flask-app:
     build:
       context: ${FLASK_APP_CONTEXT}
     ports:
-      - "${FLASK_APP_PORT}:${FLASK_APP_PORT}"
+      - \"${FLASK_APP_PORT}:${FLASK_APP_PORT}\"
     environment:
       - FLASK_ENV=production
     restart: always
     networks:
       - qrgen
-
   nitro-api:
     build:
       context: ${NITRO_API_CONTEXT}
     ports:
-      - "${NITRO_API_PORT}:${NITRO_API_PORT}"
+      - \"${NITRO_API_PORT}:${NITRO_API_PORT}\"
     environment:
       - FLASK_API_URL=http://flask-app:${FLASK_APP_PORT}
     restart: always
     depends_on:
       - flask-app
     networks:
-      - qrgen
-EOF
-)
-    # Insert new services after the last service in the services section
-    awk -v n="${new_services}" '/^[[:space:]]+[^ ]/ && p {print n; p=0} {print} /^[[:space:]]+[^ ]/ {p=1}' docker-compose.yml.backup > docker-compose.yml
+      - qrgen"
+
+    # Use awk to insert new services immediately after 'services:' line
+    awk -v new="${new_services}" '/^services:/{print;print new;next}1' docker-compose.yml.backup > docker-compose.yml
 }
 
 

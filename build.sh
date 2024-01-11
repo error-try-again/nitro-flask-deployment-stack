@@ -141,7 +141,7 @@ append_to_docker_compose() {
   if [[ "${VOLUME}" == true ]]; then
         new_services+="
     volumes:
-      - nginx-shared-volume:/usr/src/app/public"
+      - nginx-shared-volume:/usr/share/nginx/html"
   fi
 
     new_services+="${nitro_service}"

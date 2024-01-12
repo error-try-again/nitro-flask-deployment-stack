@@ -83,7 +83,7 @@ modify_nginx_dockerfile() {
         echo "Modifying Frontend App Dockerfile: ${FRONTEND_APP_DOCKERFILE}"
 
         # Read the Dockerfile into a variable
-        DOCKERFILE_CONTENTS=$(<"${FRONTEND_APP_DOCKERFILE}")
+        DOCKERFILE_CONTENTS=$(< "${FRONTEND_APP_DOCKERFILE}")
 
         # The command to be inserted
         COPY_CMD="COPY ../nitro-api/public/.well-known/ai-plugins.json /usr/share/nginx/html/.well-known/"
@@ -94,9 +94,9 @@ modify_nginx_dockerfile() {
         # Write the modified content back into the Dockerfile
         echo "${MODIFIED_CONTENTS}" > "${FRONTEND_APP_DOCKERFILE}"
 
-    else
+  else
         echo "Frontend App Dockerfile not found at: ${FRONTEND_APP_DOCKERFILE}"
-    fi
+  fi
 }
 
 # Create docker-compose.yml
@@ -128,7 +128,7 @@ services:
 EOF
 }
 
-# Function to append Flask and Nitro API services to existing docker-compose.yml
+# Append Flask and Nitro API services to existing docker-compose.yml
 append_to_docker_compose() {
     # Backup original file
     cp docker-compose.yml docker-compose.yml.backup
@@ -172,45 +172,40 @@ append_to_docker_compose() {
     awk -v new="${new_services}" '/^services:/{print;print new;next}1' docker-compose.yml.backup > docker-compose.yml
 }
 
-#######################################
-# Main function
-#######################################
-main() {
-  # Check for flags
-  AMEND=false
-  VOLUME=false
-  MOD_NGINX=false
+# Check the command line arguments for a specific flag and return true or false accordingly
+check_flag() {
   for arg in "$@"; do
-    if [[ "${arg}" == "--amend" ]]; then
-      AMEND=true
-    fi
-
-    if [[ "${arg}" == "--volume" ]]; then
-      VOLUME=true
-    fi
-
-    if [[ "${arg}" == "--mod-nginx" ]]; then
-      MOD_NGINX=true
+    if [[ "${arg}" == "${1}" ]]; then
+      echo true
+      return
     fi
   done
+  echo false
+}
 
-  # Read configuration
+# Read the values from config.txt into variables with the same name
+read_configuration() {
   local key
   local value
   while IFS='=' read -r key value; do
     eval "${key}='${value}'"
   done < config.txt
+}
 
-  # Clone or update repositories
+# Clone or update the repositories
+handle_repositories() {
   clone_or_update_repo "${FLASK_APP_REPO_URL}" "${FLASK_APP_CONTEXT}"
   clone_or_update_repo "${NITRO_API_REPO_URL}" "${NITRO_API_CONTEXT}"
+}
 
-  # Generate Dockerfiles and docker-compose.yml
+# Create the relevant Dockerfiles
+handle_dockerfiles() {
   create_flask_dockerfile
-
   create_nitro_dockerfile
+}
 
-    # Amend or create new docker-compose.yml
+# Create or append to docker-compose.yml depending on the --amend flag
+handle_docker_compose() {
   if [[ "${AMEND}" == true ]]; then
     echo "Appending to existing docker-compose.yml"
     append_to_docker_compose
@@ -218,11 +213,21 @@ main() {
     echo "Creating new docker-compose.yml"
     create_docker_compose
   fi
+}
+
+# Main function
+main() {
+  AMEND=$(check_flag --amend "$@")
+  VOLUME=$(check_flag --volume "$@")
+  MOD_NGINX=$(check_flag --mod-nginx "$@")
+
+  read_configuration
+  handle_repositories
+  handle_dockerfiles
+  handle_docker_compose
 
   if [[ "${MOD_NGINX}" == true ]]; then
     modify_nginx_dockerfile
   fi
-
 }
-
 main "$@"

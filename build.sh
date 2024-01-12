@@ -16,6 +16,8 @@ clone_or_update_repo() {
 
 # Create Flask App Dockerfile
 create_flask_dockerfile() {
+  if [[ "${CREATE_FLASK_DF}" == true ]]; then
+      echo "Creating Flask App Dockerfile: ${FLASK_APP_DOCKERFILE}"
     cat > "${FLASK_APP_DOCKERFILE}" << EOF
 # Official Python runtime as a parent image
 FROM python:3.8
@@ -42,10 +44,15 @@ ENV FLASK_ENV=production
 # Run app.py when the container launches
 CMD ["python", "./severity-matrix-api.py"]
 EOF
+  else
+        echo "Skipping Flask App Dockerfile creation."
+  fi
 }
 
 # Create Nitro API Dockerfile
 create_nitro_dockerfile() {
+  if [[ "${CREATE_NITRO_DF}" == true ]]; then
+      echo "Creating Nitro API Dockerfile: ${NITRO_API_DOCKERFILE}"
     cat > "${NITRO_API_DOCKERFILE}" << EOF
 # Node.js latest for the base image
 FROM node:latest
@@ -75,27 +82,34 @@ EXPOSE ${NITRO_API_PORT}
 # Run the application in preview mode
 CMD ["npm", "run", "preview"]
 EOF
+  else
+        echo "Skipping Nitro API Dockerfile creation."
+  fi
 }
 
 # Modify the Frontend App Dockerfile
 modify_nginx_dockerfile() {
-    if [[ "${MOD_NGINX}" == true ]]; then
-        echo "Modifying Frontend App Dockerfile: ${FRONTEND_APP_DOCKERFILE}"
+  if [[ "${MOD_NGINX}" == true ]]; then
+    echo "Modifying Frontend App Dockerfile: ${FRONTEND_APP_DOCKERFILE}"
 
-        # Read the Dockerfile into a variable
-        DOCKERFILE_CONTENTS=$(< "${FRONTEND_APP_DOCKERFILE}")
+    # Read the Dockerfile into a variable
+    DOCKERFILE_CONTENTS=$(< "${FRONTEND_APP_DOCKERFILE}")
 
-        # The command to be inserted
-        COPY_CMD="COPY ../nitro-api/public/.well-known/ai-plugins.json /usr/share/nginx/html/.well-known/"
+    # The command to be inserted
+    COPY_CMD="COPY ../nitro-api/public/.well-known/ai-plugins.json /usr/share/nginx/html/.well-known/"
 
-        # Insert the COPY command after the specified line
-        MODIFIED_CONTENTS=$(echo "${DOCKERFILE_CONTENTS}" | sed "/RUN mkdir -p \/usr\/share\/nginx\/html\/\.well-known\/acme-challenge &&     chmod -R 777 \/usr\/share\/nginx\/html\/\.well-known/a ${COPY_CMD}")
+    # Check if the command is already in the Dockerfile
+    if grep -q "${COPY_CMD}" "${FRONTEND_APP_DOCKERFILE}"; then
+      echo "Command already exists in Dockerfile."
+    else
+      # Insert the COPY command after the specified line
+      MODIFIED_CONTENTS=$(echo "${DOCKERFILE_CONTENTS}" | sed "/RUN mkdir -p \/usr\/share\/nginx\/html\/\.well-known\/acme-challenge &&     chmod -R 777 \/usr\/share\/nginx\/html\/\.well-known/a ${COPY_CMD}")
 
-        # Write the modified content back into the Dockerfile
-        echo "${MODIFIED_CONTENTS}" > "${FRONTEND_APP_DOCKERFILE}"
-
+      # Write the modified content back into the Dockerfile
+      echo "${MODIFIED_CONTENTS}" > "${FRONTEND_APP_DOCKERFILE}"
+    fi
   else
-        echo "Frontend App Dockerfile not found at: ${FRONTEND_APP_DOCKERFILE}"
+    echo "Skipping Frontend App Dockerfile modification."
   fi
 }
 
@@ -220,10 +234,17 @@ main() {
   AMEND=$(check_flag --amend "$@")
   VOLUME=$(check_flag --volume "$@")
   MOD_NGINX=$(check_flag --mod-nginx "$@")
+  CREATE_FLASK_DF=$(check_flag --create-flask-df "$@")
+  CREATE_NITRO_DF=$(check_flag --create-nitro-df "$@")
 
   read_configuration
   handle_repositories
-  handle_dockerfiles
+  if [[ "${CREATE_FLASK_DF}" == true ]]; then
+    create_flask_dockerfile
+  fi
+  if [[ "${CREATE_NITRO_DF}" == true ]]; then
+    create_nitro_dockerfile
+  fi
   handle_docker_compose
 
   if [[ "${MOD_NGINX}" == true ]]; then

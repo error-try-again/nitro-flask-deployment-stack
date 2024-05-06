@@ -1,29 +1,17 @@
-# GitSubCompose
+# Nitro Flask Deployment Stack 
 
-GitSubCompose aims to solve some of the challenges of manually configuring & maintaining large full-stack projects by auto-configuring & generating the containers required to run them.
-I found that I had too many repos & stacks in my workflow to quickly test uncoupled features at a high level. 
-Tying them all together in one neat package for testing, deployment or production can be a pain in the ass.  
-
-## Typical Case
-To *quickly* pull in multiple submodule repos that depend on each other into one & spin them up quickly on a single local or remote machine to test critical functionality at a high level.
+Automated stack for building distributed nitro API + flask API architectures within docker. Wanted to tie them together in a neat package for testing, deployment or production. 
 
 ## Features
-- Auto-Configuration: Automatically sets up and configures the required containers for your full-stack projects.
-- Simplified Workflow: Integrates multiple repositories and stacks for efficient testing and deployment.
-
-## Getting Started
-### Prerequisites
-
-- Docker installed on your system.
-- Basic understanding of Docker and containerization.
+- Automatically sets up and configures required containers for distributed full-stack applications.
 
 ### Configuration
 
-- Clone the GitSubCompose repository to your local machine.
-- Configure the project by modifying the provided environment variable names across the config & shell script to suit your needs. 
+- Git clone.
+- Configure the project by modifying the provided environment variable names across the config & shell script. 
 - Replace the Git URLs, names, and port values as needed for your project.
 
-  *Example configuration*
+  *Example*
   
   ```
       FLASK_APP_CONTEXT=./flask-app
@@ -36,7 +24,7 @@ To *quickly* pull in multiple submodule repos that depend on each other into one
       NITRO_API_PORT=3000
   ```
 
-### Setup & Run
+### Usage
 
 Execute the following commands in your terminal to build and run the containers:
 
@@ -44,6 +32,6 @@ Execute the following commands in your terminal to build and run the containers:
 ./build.sh && docker compose build --no-cache && docker compose up
 ```
 
-### Support
+# PR/Issues 
 
-For support, issues, or feature requests, please file an issue on the GitSubCompose GitHub repository.
+PRs welcome

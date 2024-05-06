@@ -1,6 +1,6 @@
 # Nitro Flask Deployment Stack 
 
-Automated stack for building distributed nitro API + flask API architectures within docker. Wanted to tie them together in a neat package for testing, deployment or production. 
+Automated stack for building distributed nitro API + flask API architectures. Wanted to tie them together in a neat package for testing, deployment or production. 
 
 ## Features
 - Automatically sets up and configures required containers for distributed full-stack applications.
